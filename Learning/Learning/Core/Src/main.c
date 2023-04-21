@@ -44,8 +44,6 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
-I2S_HandleTypeDef hi2s3;
-
 SPI_HandleTypeDef hspi1;
 
 USART_HandleTypeDef husart2;
@@ -63,13 +61,20 @@ static const uint8_t BARO_C5 = 0x0A;
 static const uint8_t BARO_C6 = 0x0C;
 static const uint8_t BARO_CONVERT_PRESSURE = 0x48; //Command to convert baro sensor to reading pressure
 static const uint8_t BARO_CONVERT_TEMP = 0x58; //Command to convert baro sensor to reading temperature
+
+static const uint8_t ACCEL_XOUT_H = (0x3B | 0x80); //High bit x accel register address ORed with read bit
+static const uint8_t ACCEL_XOUT_L = (0x3C | 0x80); //Low bit x accel register address ORed with read bit
+//static const uint8_t ACCEL_YOUT_H = (0x3D | 0x80); //High bit y accel register address ORed with read bit
+//static const uint8_t ACCEL_YOUT_L = (0x3E | 0x80); //Low bit y accel register address ORed with read bit
+//static const uint8_t ACCEL_ZOUT_H = (0x3F | 0x80); //High bit z accel register address ORed with read bit
+//static const uint8_t ACCEL_ZOUT_L = (0x40 | 0x80); //Low bit z accel register address ORed with read bit
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_I2S3_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART2_Init(void);
 void MX_USB_HOST_Process(void);
@@ -93,9 +98,11 @@ int main(void)
 	HAL_StatusTypeDef ret;
 	uint8_t buf[16];
 	uint16_t C1 = 1, C2 = 1, C3 = 1, C4 = 1, C5 = 1, C6 = 1;
+	int accel_x = 1;
 	uint32_t pressure = 0, temp = 0;
 	int32_t dT = 0, TEMP, P;
 	int64_t OFF = 0, SENS = 0;
+	uint8_t spi_buf[2];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -117,11 +124,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
-  MX_I2S3_Init();
   MX_SPI1_Init();
   MX_USB_HOST_Init();
   MX_USART2_Init();
   /* USER CODE BEGIN 2 */
+  	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 	HAL_Delay(100);
 
 	// Send reset command to baro sensor on initialization
@@ -290,7 +297,44 @@ int main(void)
 	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
 
 	  HAL_Delay(500);
-	  /* USER CODE END WHILE */
+
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	  ret = HAL_SPI_Transmit(&hspi1, (uint8_t *)&ACCEL_XOUT_H, 1, 100);
+	  if (ret != HAL_OK){
+		  strcpy((char*)buf, "Error TX_3\r\n");
+	  } else{
+		  ret = HAL_SPI_Receive(&hspi1, (uint8_t *)spi_buf, 1, 100);
+		  if (ret != HAL_OK){
+			  strcpy((char*)buf, "Error Rx\r\n");
+		  } else {
+			  accel_x = (spi_buf[0]<<8);
+		  }
+	  }
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	  HAL_Delay(10);
+
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	  ret = HAL_SPI_Transmit(&hspi1, (uint8_t *)&ACCEL_XOUT_L, 1, 100);
+	  if (ret != HAL_OK){
+		  strcpy((char*)buf, "Error TX_3\r\n");
+	  } else{
+		  ret = HAL_SPI_Receive(&hspi1, (uint8_t *)spi_buf, 1, 100);
+		  if (ret != HAL_OK){
+			  strcpy((char*)buf, "Error Rx\r\n");
+		  } else {
+			  accel_x |= spi_buf[0];
+		  }
+	  }
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+
+	  strcpy((char*)buf, "Accel X: ");
+	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+	  sprintf((char*)buf, "%i\r\n", (int)accel_x);
+	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+
+	  HAL_Delay(500);
+
+    /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
@@ -378,40 +422,6 @@ static void MX_I2C1_Init(void)
 }
 
 /**
-  * @brief I2S3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2S3_Init(void)
-{
-
-  /* USER CODE BEGIN I2S3_Init 0 */
-
-  /* USER CODE END I2S3_Init 0 */
-
-  /* USER CODE BEGIN I2S3_Init 1 */
-
-  /* USER CODE END I2S3_Init 1 */
-  hi2s3.Instance = SPI3;
-  hi2s3.Init.Mode = I2S_MODE_MASTER_TX;
-  hi2s3.Init.Standard = I2S_STANDARD_PHILIPS;
-  hi2s3.Init.DataFormat = I2S_DATAFORMAT_16B;
-  hi2s3.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_96K;
-  hi2s3.Init.CPOL = I2S_CPOL_LOW;
-  hi2s3.Init.ClockSource = I2S_CLOCK_PLL;
-  hi2s3.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_DISABLE;
-  if (HAL_I2S_Init(&hi2s3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2S3_Init 2 */
-
-  /* USER CODE END I2S3_Init 2 */
-
-}
-
-/**
   * @brief SPI1 Initialization Function
   * @param None
   * @retval None
@@ -434,7 +444,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -507,6 +517,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(IMU_CS_GPIO_Port, IMU_CS_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
                           |Audio_RST_Pin, GPIO_PIN_RESET);
 
@@ -538,6 +551,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : IMU_CS_Pin */
+  GPIO_InitStruct.Pin = IMU_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(IMU_CS_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : BOOT1_Pin */
   GPIO_InitStruct.Pin = BOOT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -560,6 +580,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : I2S3_MCK_Pin I2S3_SCK_Pin I2S3_SD_Pin */
+  GPIO_InitStruct.Pin = I2S3_MCK_Pin|I2S3_SCK_Pin|I2S3_SD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
   GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;
