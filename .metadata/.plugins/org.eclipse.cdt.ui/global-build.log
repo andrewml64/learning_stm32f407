@@ -1,0 +1,28 @@
+10:46:51 **** Incremental Build of configuration Debug for project Screen_Test ****
+make -j8 all 
+arm-none-eabi-size   Screen_Test.elf 
+   text	   data	    bss	    dec	    hex	filename
+  28212	     28	   1764	  30004	   7534	Screen_Test.elf
+Finished building: default.size.stdout
+ 
+10:47:39 **** Incremental Build of configuration Debug for project Screen_Test ****
+make -j8 all 
+arm-none-eabi-size   Screen_Test.elf 
+   text	   data	    bss	    dec	    hex	filename
+  28212	     28	   1764	  30004	   7534	Screen_Test.elf
+Finished building: default.size.stdout
+ 
+10:54:15 **** Incremental Build of configuration Debug for project Screen_Test ****
+make -j8 all 
+arm-none-eabi-size   Screen_Test.elf 
+   text	   data	    bss	    dec	    hex	filename
+  28212	     28	   1764	  30004	   7534	Screen_Test.elf
+Finished building: default.size.stdout
+ 
+10:54:31 **** Incremental Build of configuration Debug for project Screen_Test ****
+make -j8 all 
+arm-none-eabi-size   Screen_Test.elf 
+   text	   data	    bss	    dec	    hex	filename
+  28212	     28	   1764	  30004	   7534	Screen_Test.elf
+Finished building: default.size.stdout
+ 

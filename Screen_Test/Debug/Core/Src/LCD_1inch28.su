@@ -1,0 +1,14 @@
+../Core/Src/LCD_1inch28.c:26:5:Module_Init	8	static
+../Core/Src/LCD_1inch28.c:39:6:Module_Exit	8	static
+../Core/Src/LCD_1inch28.c:52:13:LCD_1IN28_Reset	8	static
+../Core/Src/LCD_1inch28.c:67:13:LCD_1IN28_SendCommand	16	static
+../Core/Src/LCD_1inch28.c:80:13:LCD_1IN28_SendData_8Bit	16	static
+../Core/Src/LCD_1inch28.c:93:13:LCD_1IN28_SendData_16Bit	24	static
+../Core/Src/LCD_1inch28.c:108:13:LCD_1IN28_InitReg	8	static
+../Core/Src/LCD_1inch28.c:351:13:LCD_1IN28_SetAttributes	24	static
+../Core/Src/LCD_1inch28.c:377:6:LCD_1IN28_Init	16	static
+../Core/Src/LCD_1inch28.c:398:6:LCD_1IN28_SetWindows	24	static
+../Core/Src/LCD_1inch28.c:421:6:LCD_1IN28_Clear	24	static
+../Core/Src/LCD_1inch28.c:437:6:LCD_1IN28_Display	24	static
+../Core/Src/LCD_1inch28.c:449:6:LCD_1IN28_DisplayWindows	40	static
+../Core/Src/LCD_1inch28.c:472:6:LCD_1IN28_DrawPaint	16	static

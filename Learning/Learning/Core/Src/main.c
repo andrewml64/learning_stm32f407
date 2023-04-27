@@ -47,6 +47,7 @@ I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 
 USART_HandleTypeDef husart2;
+UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 static const uint8_t BARO_ADDR = 0x77 << 1; //Left shifted to use 8 bit address
@@ -77,6 +78,7 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART2_Init(void);
+static void MX_USART3_UART_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
@@ -97,6 +99,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	HAL_StatusTypeDef ret;
 	uint8_t buf[16];
+	char usart_buf[82];
 	uint16_t C1 = 1, C2 = 1, C3 = 1, C4 = 1, C5 = 1, C6 = 1;
 	int accel_x = 1;
 	uint32_t pressure = 0, temp = 0;
@@ -127,6 +130,7 @@ int main(void)
   MX_SPI1_Init();
   MX_USB_HOST_Init();
   MX_USART2_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 	HAL_Delay(100);
@@ -332,6 +336,17 @@ int main(void)
 	  sprintf((char*)buf, "%i\r\n", (int)accel_x);
 	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
 
+// Tried to read GPS over Uart3 but just got junk. Looks like I might need a ring buffer
+//	  HAL_Delay(10);
+//
+//	  HAL_USART_Receive(&huart3, usart_buf, strlen((char*)usart_buf), 5000);
+//
+//	  strcpy((char*)buf, "GPS: ");
+//	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+//	  HAL_USART_Transmit(&husart2, (char*)usart_buf, strlen((char*)usart_buf), HAL_MAX_DELAY);
+//	  strcpy((char*)buf, "\r\n");
+//	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+
 	  HAL_Delay(500);
 
     /* USER CODE END WHILE */
@@ -490,6 +505,39 @@ static void MX_USART2_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
 
 }
 
