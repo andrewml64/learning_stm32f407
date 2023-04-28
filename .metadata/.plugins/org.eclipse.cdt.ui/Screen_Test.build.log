@@ -1,17 +1,10 @@
-22:31:26 **** Incremental Build of configuration Debug for project Screen_Test ****
+09:43:30 **** Incremental Build of configuration Debug for project Screen_Test ****
 make -j8 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "Screen_Test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\andre\Documents\Personal_Projects\learning_stm32f407\Screen_Test\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Screen_Test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: Screen_Test.elf
- 
 arm-none-eabi-size   Screen_Test.elf 
-arm-none-eabi-objdump -h -S  Screen_Test.elf  > "Screen_Test.list"
    text	   data	    bss	    dec	    hex	filename
-  43476	    132	   2084	  45692	   b27c	Screen_Test.elf
+  31112	    132	   2092	  33336	   8238	Screen_Test.elf
 Finished building: default.size.stdout
  
-Finished building: Screen_Test.list
- 
 
-22:31:27 Build Finished. 0 errors, 0 warnings. (took 803ms)
+09:43:30 Build Finished. 0 errors, 0 warnings. (took 221ms)
 

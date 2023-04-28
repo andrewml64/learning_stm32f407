@@ -284,6 +284,9 @@ int main(void)
 		  }
 	  }
 
+	  //sprintf((char*)buf, "%u \r\n", temp);
+	  //HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+
 	  dT = temp - C5*pow(2,8);
 	  TEMP = 2000 + dT*C6/pow(2,23);
 	  strcpy((char*)buf, "Temperature: ");
@@ -302,7 +305,7 @@ int main(void)
 
 	  HAL_Delay(500);
 
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	/*  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 	  ret = HAL_SPI_Transmit(&hspi1, (uint8_t *)&ACCEL_XOUT_H, 1, 100);
 	  if (ret != HAL_OK){
 		  strcpy((char*)buf, "Error TX_3\r\n");
@@ -334,7 +337,7 @@ int main(void)
 	  strcpy((char*)buf, "Accel X: ");
 	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
 	  sprintf((char*)buf, "%i\r\n", (int)accel_x);
-	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);*/
 
 // Tried to read GPS over Uart3 but just got junk. Looks like I might need a ring buffer
 //	  HAL_Delay(10);
@@ -347,7 +350,7 @@ int main(void)
 //	  strcpy((char*)buf, "\r\n");
 //	  HAL_USART_Transmit(&husart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
 
-	  HAL_Delay(500);
+	  //HAL_Delay(500);
 
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();

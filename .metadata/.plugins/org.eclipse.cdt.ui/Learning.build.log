@@ -1,0 +1,41 @@
+08:44:04 **** Incremental Build of configuration Debug for project Learning ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx -c -I../USB_HOST/App -I../USB_HOST/Target -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Host_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Host_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:287:26: warning: format '%u' expects argument of type 'unsigned int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  287 |    sprintf((char*)buf, "%u \r\n", temp);
+      |                         ~^        ~~~~
+      |                          |        |
+      |                          |        uint32_t {aka long unsigned int}
+      |                          unsigned int
+      |                         %lu
+../Core/Src/main.c:108:10: warning: unused variable 'spi_buf' [-Wunused-variable]
+  108 |  uint8_t spi_buf[2];
+      |          ^~~~~~~
+../Core/Src/main.c:104:6: warning: unused variable 'accel_x' [-Wunused-variable]
+  104 |  int accel_x = 1;
+      |      ^~~~~~~
+../Core/Src/main.c:102:7: warning: unused variable 'usart_buf' [-Wunused-variable]
+  102 |  char usart_buf[82];
+      |       ^~~~~~~~~
+At top level:
+../Core/Src/main.c:67:22: warning: 'ACCEL_XOUT_L' defined but not used [-Wunused-const-variable=]
+   67 | static const uint8_t ACCEL_XOUT_L = (0x3C | 0x80); //Low bit x accel register address ORed with read bit
+      |                      ^~~~~~~~~~~~
+../Core/Src/main.c:66:22: warning: 'ACCEL_XOUT_H' defined but not used [-Wunused-const-variable=]
+   66 | static const uint8_t ACCEL_XOUT_H = (0x3B | 0x80); //High bit x accel register address ORed with read bit
+      |                      ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "Learning.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\andre\Documents\Personal_Projects\learning_stm32f407\Learning\Learning\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Learning.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Learning.elf
+ 
+arm-none-eabi-size   Learning.elf 
+arm-none-eabi-objdump -h -S  Learning.elf  > "Learning.list"
+   text	   data	    bss	    dec	    hex	filename
+  42720	    152	   3656	  46528	   b5c0	Learning.elf
+Finished building: default.size.stdout
+ 
+Finished building: Learning.list
+ 
+
+08:44:05 Build Finished. 0 errors, 6 warnings. (took 883ms)
+

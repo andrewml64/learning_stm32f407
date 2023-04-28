@@ -62,7 +62,8 @@ static const uint8_t BARO_PROM_ADDR = 0xA0; //Base PROM ADDR for Baro sensor
 static const uint8_t BARO_C5 = 0x0A;
 static const uint8_t BARO_C6 = 0x0C;
 static const uint8_t BARO_CONVERT_TEMP = 0x58; //Command to convert baro sensor to reading temperature
-uint16_t Const_5 = 1, Const_6 = 1;
+uint16_t C5 = 1, C6 = 1;
+volatile uint8_t Temp_FLAG = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,7 +91,6 @@ static void MX_TIM9_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint8_t buf[30];
 
   /* USER CODE END 1 */
 
@@ -121,47 +121,47 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_StatusTypeDef ret;
+  uint8_t buf[30];
+  uint32_t temp = 0;
+  int32_t dT = 0, TEMP = 0;
 
   TIM1->CCR1 = 20;
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
   buf[0] = BARO_RESET;
-  HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
-  HAL_Delay(10);
+  ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+  if (ret != HAL_OK){
+	  strcpy((char*)buf, "Error TX_1\r\n");
+  }
+  HAL_Delay(50);
 
   buf[0] = BARO_PROM_ADDR | BARO_C5;
   ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
   if (ret != HAL_OK){
-  	strcpy((char*)buf, "Error TX_1e\r\n");
+	  strcpy((char*)buf, "Error TX_1e\r\n");
   }else{
-  	  ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 2, HAL_MAX_DELAY);
-  	  if (ret != HAL_OK){
-  		  strcpy((char*)buf, "Error Rx\r\n");
-  	  } else {
-  		  Const_5 = ((buf[0] << 8) | buf[1]);
-  	  }
+	  ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 2, HAL_MAX_DELAY);
+	  if (ret != HAL_OK){
+		  strcpy((char*)buf, "Error Rx\r\n");
+	  } else {
+		  C5 = ((buf[0] << 8) | buf[1]);
+	  }
   }
-  HAL_Delay(10);
+  HAL_Delay(50);
 
   buf[0] = BARO_PROM_ADDR | BARO_C6;
-  	ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
-  	if (ret != HAL_OK){
-  		strcpy((char*)buf, "Error TX_1f\r\n");
-  	}else{
-  		 ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 2, HAL_MAX_DELAY);
-  		 if (ret != HAL_OK){
-  			 strcpy((char*)buf, "Error Rx\r\n");
-  		 } else {
-  			 Const_6 = ((buf[0] << 8) | buf[1]);
-  		 }
-  	}
-  HAL_Delay(10);
-
-  buf[0] = BARO_CONVERT_TEMP;
   ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
   if (ret != HAL_OK){
-	  strcpy((char*)buf, "Error TX_2\r\n");
-  }
+		strcpy((char*)buf, "Error TX_1f\r\n");
+	}else{
+		  ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 2, HAL_MAX_DELAY);
+		  if (ret != HAL_OK){
+			  strcpy((char*)buf, "Error Rx\r\n");
+		  } else {
+			  C6 = ((buf[0] << 8) | buf[1]);
+		  }
+	}
+	HAL_Delay(50);
 
   Module_Init();
 
@@ -182,18 +182,18 @@ int main(void)
 
 //printf("drawing...\r\n");
 
-  Paint_DrawCircle(120,120, 120, BLUE ,DOT_PIXEL_2X2,DRAW_FILL_EMPTY);
-  Paint_DrawLine  (120, 0, 120, 12,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
-  Paint_DrawLine  (120, 228, 120, 240,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
-  Paint_DrawLine  (0, 120, 12, 120,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
-  Paint_DrawLine  (228, 120, 240, 120,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
+  //Paint_DrawCircle(120,120, 120, BLUE ,DOT_PIXEL_2X2,DRAW_FILL_EMPTY);
+  //Paint_DrawLine  (120, 0, 120, 12,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
+  //Paint_DrawLine  (120, 228, 120, 240,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
+  //Paint_DrawLine  (0, 120, 12, 120,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
+  //Paint_DrawLine  (228, 120, 240, 120,GREEN ,DOT_PIXEL_4X4,LINE_STYLE_SOLID);
 
-  Paint_DrawImage(gImage_70X70, 85, 25, 70, 70);
-  Paint_DrawString_EN(123, 123, "WAVESHARE",&Font16,  BLACK, GREEN);
+  //Paint_DrawImage(gImage_70X70, 85, 25, 70, 70);
+  //Paint_DrawString_EN(123, 123, "WAVESHARE",&Font16,  BLACK, GREEN);
 
-  Paint_DrawLine  (120, 120, 70, 70,YELLOW ,DOT_PIXEL_3X3,LINE_STYLE_SOLID);
-  Paint_DrawLine  (120, 120, 176, 64,BLUE ,DOT_PIXEL_3X3,LINE_STYLE_SOLID);
-  Paint_DrawLine  (120, 120, 120, 210,RED ,DOT_PIXEL_2X2,LINE_STYLE_SOLID);
+  //Paint_DrawLine  (120, 120, 70, 70,YELLOW ,DOT_PIXEL_3X3,LINE_STYLE_SOLID);
+  //Paint_DrawLine  (120, 120, 176, 64,BLUE ,DOT_PIXEL_3X3,LINE_STYLE_SOLID);
+  //Paint_DrawLine  (120, 120, 120, 210,RED ,DOT_PIXEL_2X2,LINE_STYLE_SOLID);
 
   HAL_TIM_Base_Start_IT(&htim9);
 
@@ -203,12 +203,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	if (Temp_FLAG == 1){
+		buf[0] = BARO_CONVERT_TEMP;
+		HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
 
-	  //strcpy((char*)buf, "Hello\r\n");
-	  //HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
-	  //HAL_Delay(500);
-	  //printf("quit...\r\n");
-	  //Module_Exit();
+		HAL_Delay(15);
+
+		// Read temperature value
+
+		buf[0] = ADC_BARO_READ_ADDR;
+		HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+		HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 3, HAL_MAX_DELAY);
+		temp = ((0x00 << 24) | (buf[0] << 16) | (buf[1] << 8) | buf[2]);
+
+		dT = temp - C5*pow(2,8);
+		TEMP = 2000 + dT*C6/pow(2,23);
+
+		sprintf((char*)buf, "%i.%02u C", (int)TEMP/100, (unsigned int)TEMP%100);
+		Paint_DrawString_EN(123, 123+16, (char *) buf, &Font16, BLACK, GREEN);
+		Temp_FLAG = 0;
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -688,51 +702,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 
 	else if (htim == &htim9){
-
-		HAL_StatusTypeDef ret;
-		uint8_t buf[10];
-		uint8_t usart_buf[14];
-		uint8_t disp_buf[10];
-		uint32_t temp = 0;
-		int32_t dT = 0, TEMP = 0;
-
-		strcpy((char*)usart_buf, "All Good\r\n");
-
-		/*buf[0] = BARO_RESET;
-		ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
-		if (ret != HAL_OK){
-			strcpy((char*)usart_buf, "Error TX_1\r\n");
-		}*/
-
-
-		buf[0] = ADC_BARO_READ_ADDR;
-		ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
-		ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 3, HAL_MAX_DELAY);
-		temp = ((0x00 << 24) | (buf[0] << 16) | (buf[1] << 8) | buf[2]);
-
-		dT = temp - Const_5*pow(2,8);
-		TEMP = 2000 + dT*Const_6/pow(2,23);
-		sprintf((char*)disp_buf, "%iC ", (int)TEMP);
-		Paint_DrawString_EN(123, 123+16, (char *) disp_buf, &Font16, BLACK, GREEN);
-		__HAL_TIM_SET_COUNTER(&htim9, 0);
-
-		buf[0] = BARO_RESET;
-		ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
-		if (ret != HAL_OK){
-			strcpy((char*)usart_buf, "Error TX_1\r\n");
-		}
-
-		//strcpy((char*)buf, "Temp");
-		//sprintf((char*)buf, "%i C", (int)TEMP);
-		HAL_UART_Transmit(&huart2, disp_buf, strlen((char*)disp_buf), 100);
-		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);
-		/*sprintf((char*)usart_buf, "%u | ", Const_5);
-		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);
-		sprintf((char*)usart_buf, "%u | ", Const_6);
-		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);
-		sprintf((char*)usart_buf, "%i | \r\n", (int) dT);
-		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);*/
-
+		Temp_FLAG = 1;
 	}
 
 }
