@@ -26,6 +26,7 @@
 #include "fonts.h"
 #include "image.h"
 #include "string.h"
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,15 +44,25 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim9;
 
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+static const uint8_t BARO_ADDR = 0x77 << 1; //Left shifted to use 8 bit address
+static const uint8_t BARO_RESET = 0x1E; //Reset command
+static const uint8_t ADC_BARO_READ_ADDR = 0x00; //Command to read Baro's ADC (24 bit read)
+static const uint8_t BARO_PROM_ADDR = 0xA0; //Base PROM ADDR for Baro sensor
+static const uint8_t BARO_C5 = 0x0A;
+static const uint8_t BARO_C6 = 0x0C;
+static const uint8_t BARO_CONVERT_TEMP = 0x58; //Command to convert baro sensor to reading temperature
+uint16_t Const_5 = 1, Const_6 = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,6 +72,8 @@ static void MX_SPI1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_TIM9_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -103,11 +116,53 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
+  MX_I2C1_Init();
+  MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
+
+  HAL_StatusTypeDef ret;
+
   TIM1->CCR1 = 20;
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  strcpy((char*)buf, "Screen Demo\r\n");
-  HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+
+  buf[0] = BARO_RESET;
+  HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+  HAL_Delay(10);
+
+  buf[0] = BARO_PROM_ADDR | BARO_C5;
+  ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+  if (ret != HAL_OK){
+  	strcpy((char*)buf, "Error TX_1e\r\n");
+  }else{
+  	  ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 2, HAL_MAX_DELAY);
+  	  if (ret != HAL_OK){
+  		  strcpy((char*)buf, "Error Rx\r\n");
+  	  } else {
+  		  Const_5 = ((buf[0] << 8) | buf[1]);
+  	  }
+  }
+  HAL_Delay(10);
+
+  buf[0] = BARO_PROM_ADDR | BARO_C6;
+  	ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+  	if (ret != HAL_OK){
+  		strcpy((char*)buf, "Error TX_1f\r\n");
+  	}else{
+  		 ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 2, HAL_MAX_DELAY);
+  		 if (ret != HAL_OK){
+  			 strcpy((char*)buf, "Error Rx\r\n");
+  		 } else {
+  			 Const_6 = ((buf[0] << 8) | buf[1]);
+  		 }
+  	}
+  HAL_Delay(10);
+
+  buf[0] = BARO_CONVERT_TEMP;
+  ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+  if (ret != HAL_OK){
+	  strcpy((char*)buf, "Error TX_2\r\n");
+  }
+
   Module_Init();
 
 //printf("LCD_1IN28_ Init and Clear...\r\n");
@@ -139,13 +194,20 @@ int main(void)
   Paint_DrawLine  (120, 120, 70, 70,YELLOW ,DOT_PIXEL_3X3,LINE_STYLE_SOLID);
   Paint_DrawLine  (120, 120, 176, 64,BLUE ,DOT_PIXEL_3X3,LINE_STYLE_SOLID);
   Paint_DrawLine  (120, 120, 120, 210,RED ,DOT_PIXEL_2X2,LINE_STYLE_SOLID);
+
+  HAL_TIM_Base_Start_IT(&htim9);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	//printf("quit...\r\n");
+
+	  //strcpy((char*)buf, "Hello\r\n");
+	  //HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+	  //HAL_Delay(500);
+	  //printf("quit...\r\n");
 	  //Module_Exit();
     /* USER CODE END WHILE */
 
@@ -198,6 +260,40 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
@@ -355,6 +451,44 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief TIM9 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM9_Init(void)
+{
+
+  /* USER CODE BEGIN TIM9_Init 0 */
+
+  /* USER CODE END TIM9_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+
+  /* USER CODE BEGIN TIM9_Init 1 */
+
+  /* USER CODE END TIM9_Init 1 */
+  htim9.Instance = TIM9;
+  htim9.Init.Prescaler = 25000-1;
+  htim9.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim9.Init.Period = 5000-1;
+  htim9.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim9) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim9, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM9_Init 2 */
+
+  /* USER CODE END TIM9_Init 2 */
 
 }
 
@@ -524,14 +658,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(OTG_FS_OverCurrent_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Audio_SCL_Pin Audio_SDA_Pin */
-  GPIO_InitStruct.Pin = Audio_SCL_Pin|Audio_SDA_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
   /*Configure GPIO pin : MEMS_INT2_Pin */
   GPIO_InitStruct.Pin = MEMS_INT2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
@@ -550,14 +676,65 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if(GPIO_Pin == Backlight_Pin){
 		TIM1->CCR1 = 100;
 		HAL_TIM_Base_Start_IT(&htim3);
+		__HAL_TIM_SET_COUNTER(&htim3, 0);
 	}
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+
 	if (htim == &htim3){
 		TIM1->CCR1 = 20;
+		HAL_TIM_Base_Stop_IT(&htim3);
 	}
-	HAL_TIM_Base_Stop_IT(&htim3);
+
+	else if (htim == &htim9){
+
+		HAL_StatusTypeDef ret;
+		uint8_t buf[10];
+		uint8_t usart_buf[14];
+		uint8_t disp_buf[10];
+		uint32_t temp = 0;
+		int32_t dT = 0, TEMP = 0;
+
+		strcpy((char*)usart_buf, "All Good\r\n");
+
+		/*buf[0] = BARO_RESET;
+		ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+		if (ret != HAL_OK){
+			strcpy((char*)usart_buf, "Error TX_1\r\n");
+		}*/
+
+
+		buf[0] = ADC_BARO_READ_ADDR;
+		ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+		ret = HAL_I2C_Master_Receive(&hi2c1, BARO_ADDR, buf, 3, HAL_MAX_DELAY);
+		temp = ((0x00 << 24) | (buf[0] << 16) | (buf[1] << 8) | buf[2]);
+
+		dT = temp - Const_5*pow(2,8);
+		TEMP = 2000 + dT*Const_6/pow(2,23);
+		sprintf((char*)disp_buf, "%iC ", (int)TEMP);
+		Paint_DrawString_EN(123, 123+16, (char *) disp_buf, &Font16, BLACK, GREEN);
+		__HAL_TIM_SET_COUNTER(&htim9, 0);
+
+		buf[0] = BARO_RESET;
+		ret = HAL_I2C_Master_Transmit(&hi2c1, BARO_ADDR, buf, 1, HAL_MAX_DELAY);
+		if (ret != HAL_OK){
+			strcpy((char*)usart_buf, "Error TX_1\r\n");
+		}
+
+		//strcpy((char*)buf, "Temp");
+		//sprintf((char*)buf, "%i C", (int)TEMP);
+		HAL_UART_Transmit(&huart2, disp_buf, strlen((char*)disp_buf), 100);
+		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);
+		/*sprintf((char*)usart_buf, "%u | ", Const_5);
+		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);
+		sprintf((char*)usart_buf, "%u | ", Const_6);
+		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);
+		sprintf((char*)usart_buf, "%i | \r\n", (int) dT);
+		HAL_UART_Transmit(&huart2, usart_buf, strlen((char*)usart_buf), 100);*/
+
+	}
+
 }
 
 /* USER CODE END 4 */
